@@ -1,0 +1,303 @@
+<!-- physics >> Equations >> Algorithms >> Code >> Simulate  -->
+<!--  
+  |
+  |
+  |
+  |
+  |
+  |
+  |           o o o
+  |        o         o
+  |     o              o
+  |   o                  0
+  | o                      0
+  |o_________________________0______________________
+  
+
+  Equations 
+  Vx = Vi * Cos(theta)         velocity at x-axis
+  Vy = Vi * Sin(theta)         velocity at Y-axis
+  t = 2 * ViSin(theta) /  g    the time of taken by ball to get its final position
+  R = Vi**2 Sin(2*theta)/ g    X displacement 
+  H = (Vi sin(theta))**2 / 2g  the maximum height 
+  all i need is the equation that give me the cordinates of the ball after every frame 
+  dxc = vx *t;  current position on X axis at certain frame
+  dyc = vy * t + 0.5 * (-1 * g) * Math.pow(t, 2); current position of ball at ceratin frame 
+  we have to change the time at every frame if the frame per second is 60
+  so we have to devide the second by 60 = 0.016
+  and we need to check that everytime we increase the time by 0.016 that didn't reach the estimated time
+  for reaching the fianl position 
+  
+  take in consideration 
+  the accelaeration on x-axis is constant
+  the acceleration on Y-axis is -9.8 for every second
+  at the maximum height Vy=0
+
+note: there is something i didn't figure it out , updating the input value of the angle 
+and the velocity although it is updating on html element onchanging the value 
+i didn't solve it because of deadline
+
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+
+  <!-- Styling Start-->
+  <style>
+    canvas {
+      background-color: black;
+    }
+
+    body {
+      background-color: rgb(91, 115, 138);
+      color: white;
+      text-shadow: 5px 5px 5px black;
+      text-align: center;
+    }
+
+    .btn {
+      margin-right: 10px;
+      border: 1px solid;
+      color: white;
+      padding: 14px 28px;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 20px;
+      box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+
+    }
+
+    .fire {
+      background-color: white;
+      color: black;
+      border: 2px solid #4CAF50;
+    }
+
+    .fire:hover {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .reset {
+      background-color: #575555;
+    }
+
+    .reset:hover {
+      background-color: darkgrey;
+    }
+
+    #Xdistance,
+    #Ydistance,
+    #time {
+      font-weight: 500;
+      font-size: larger;
+    }
+
+    #angle,
+    #velocity {
+
+      padding: 10px 10px;
+      border-radius: 5px;
+      border-color: aliceblue;
+      font-size: 24px;
+      width: 50px;
+      height: 20px;
+      font-family: 'Times New Roman', Times, serif;
+      font-stretch: ultra-expanded;
+    }
+
+    label {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-weight: 600;
+      padding: 10px;
+    }
+  </style>
+  <!-- Styling End -->
+
+
+
+
+
+
+
+</head>
+<!-- HTML Start -->
+
+<body>
+  <h1>Projectile Motion Simulation</h1>
+  <p>The Maximum Height within Y-axis is : <span id="Ydistance"> 0</span> <span style="color: #f5f1f1;">m</span></p>
+  <canvas id="canvas"></canvas>
+  <p>The Distance travelled within X-axis is : <span id="Xdistance">0 </span> <span style="color: #f5f1f1;">m</span></p>
+  <p>The time taken is : <span id="time"> 0</span> <span style="color: #f5f1f1;">s</span></p>
+
+  <form>
+    <label for="anglث">Angel</label>
+    <input type="number" id="angle" value="45" max="180" required onchange="updateInputs()">
+
+    <label for="velocity">Velocity</label>
+    <input type="number" id="velocity" value="50" required onchange="updateInputs()" ">
+
+    <label id=" speed-text" for="speed"><strong>Speed:</strong> <span id="speedValue">1</span>x</label>
+    <input id="speed" type="range" value="1" min="0.5" max="10" step="0.1" oninput="updateSpeedText()"
+      onchange="updateSpeedText()" />
+
+    <button id="fireBtn" type="button" class="btn fire" type="submit">Fire</button>
+    <button id="resetBtn" class="btn reset" type="reset">Reset</button>
+  </form>
+
+
+  <!-- HTML End -->
+
+  <!-- Script Start -->
+  <script>
+    //initiallize canvas
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext('2d');
+
+    //initiallize  the dimension of the canvas
+    canvas.width = window.innerWidth / 2;
+    canvas.height = window.innerHeight / 3;
+
+    //fucntion to match the input value with the value attribut
+    function updateInputs() {
+      Inputang.setAttribute('value', Inputang.value);
+      Inputvel.setAttribute('value', Inputvel.value);
+    }
+
+    //Labels
+    const xD = document.getElementById("Xdistance");        //the total distance covered in x-axis
+    const yD = document.getElementById("Ydistance");        //the total distance covered in y-axis
+    const time = document.getElementById("time");
+    const fireBtn = document.getElementById("fireBtn");      //fire button
+    const resetBtn = document.getElementById("resetBtn");   //reset button
+    const Inputvel = document.getElementById('velocity');    //speed of the ball
+    const Inputang = document.getElementById('angle');       //theta
+    const r = 5;                                            //size of the ball
+    let v = Number(Inputvel.value);
+    let theta = Number(Inputang.value) * Math.PI / 180;
+    const g = 9.8;
+    const vx = v * Math.cos(theta);                         // Velocity on the X-axis
+    const vy = v * Math.sin(theta);                         // Velocity on the Y-axis
+    const dx = (Math.pow(v, 2) * Math.sin(2 * theta)) / g;  // Range (displacement or distance traveled on the X axis)
+    const dy = (Math.pow(v, 2) * Math.pow(Math.sin(theta), 2)) / (2 * g); // Maximum height
+    const t = (2 * v * Math.sin(theta)) / g;                               // Total displacement time
+    const speed = document.getElementById("speed");
+    let rnt = 0; //time passed from  point of firing 
+
+
+
+
+    //to cancel the recursion funciton of animation
+    function stopanimate() {
+      window.cancelAnimationFrame(request)
+    }
+
+    const updateSpeedText = () => {
+      document.getElementById('speedValue').innerText = speed.value;
+    };
+    //function to clear the animation from the canvas 
+    const clearCanvas = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+
+
+    class Ball {
+      constructor(x, y) {
+        this.x = x;//x postion
+        this.y = y;//y position
+      }
+      color = "red"
+
+      drawBall() {
+        ctx.save();
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // we need to calculate the next cordinates (x,y) of each frame 
+      //so this function will change the position of x and y of the ball on each frame 
+
+      update() {
+        let currentX = vx * rnt;
+        let currentY = vy * rnt + 0.5 * (-1 * g) * Math.pow(rnt, 2)
+
+        if (rnt <= t) {
+          this.x = currentX;
+          this.y = canvas.height - currentY
+          //monitor the change of the displacement and time
+          xD.innerText = Number.parseFloat(currentX).toFixed(1);
+          yD.innerText = Number.parseFloat(dy).toFixed(1);
+          time.innerText = Number.parseFloat(rnt).toFixed(1)
+          rnt += speed.value / 60;//devide the speed value by 60 fram per second 
+          //to control the speed of the animation 
+        }
+
+
+        //to adjust the canvas if the displacemetn is greater than the canvas
+        if (dx > canvas.width) canvas.width = dx + r;
+        if (dy > canvas.height) canvas.height = dy + r;
+
+      }
+
+
+    }
+    //initiallize ball object 
+    let ball = new Ball(0 + r, canvas.height - r)
+    ball.drawBall() //show ball on the screen
+
+
+
+    function animate() {
+      if (rnt < t) {
+        //  clearCanvas()  if you want to clear tracking of the ball uncomment this line
+        ball.update();
+        ball.drawBall();
+        console.log("animation is running")
+        request = window.requestAnimationFrame(animate)//each 0.016 sec animate function will be invoked 
+
+      }
+
+    }
+
+
+
+
+
+    fireBtn.addEventListener('click', function () {
+      Inputang.disabled = Inputvel.disabled = fireBtn.disabled = true;
+      resetBtn.disabled = false;
+      animate()
+    })
+
+    resetBtn.addEventListener('click', function () {
+      Inputang.disabled = Inputvel.disabled = fireBtn.disabled = false;
+      resetBtn.disabled = true;
+      stopanimate()
+      clearCanvas()
+      //to draw a ball after clearint the canvas 
+      ctx.save();
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(r, canvas.height - r, r, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.fill();
+      rnt = 0 // to reset the position of currentX and currentY
+      xD.innerText = '0';
+      yD.innerText = '0';
+      time.innerText = '0';
+    })
+  </script>
+  <!-- Script End -->
+
+
+</body>
+
+</html>
